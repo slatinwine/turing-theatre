@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>图灵剧场 · Turing Theatre</title>
+<style>
+  :root {
+    --paper: #f7f2e5;
+    --paper-dark: #efe7d2;
+    --ink: #2b2320;
+    --ink-soft: #6b5f57;
+    --curtain: #7a1f1f;
+    --curtain-deep: #5c1616;
+    --gold: #a8792c;
+    --line: rgba(43,35,32,.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Noto Serif SC", "Source Han Serif SC", Georgia, "Songti SC", SimSun, serif;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+  .curtain-bar {
+    background: var(--curtain);
+    color: #f3e6c8;
+    padding: 26px 20px 18px;
+    text-align: center;
+    border-bottom: 4px solid var(--gold);
+  }
+  .curtain-bar h1 { font-size: 26px; letter-spacing: 6px; font-weight: 500; }
+  .curtain-bar .en { font-size: 12px; letter-spacing: 3px; opacity: .75; margin-top: 2px; }
+  .curtain-bar .slogan { font-size: 14px; margin-top: 8px; opacity: .92; }
+  nav {
+    display: flex; justify-content: center; gap: 8px;
+    background: var(--curtain-deep);
+    padding: 0 12px;
+  }
+  nav button {
+    background: none; border: none; cursor: pointer;
+    color: #e8d5ae; font-family: inherit; font-size: 15px;
+    letter-spacing: 2px; padding: 10px 18px 12px;
+    border-bottom: 3px solid transparent;
+  }
+  nav button.on { color: #fff; border-bottom-color: var(--gold); }
+  main { max-width: 640px; margin: 0 auto; padding: 20px 16px 60px; }
+  .panel {
+    background: #fffdf6;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px 18px;
+    margin-top: 16px;
+  }
+  .panel h2 { font-size: 17px; font-weight: 500; margin-bottom: 6px; }
+  .panel .sub { font-size: 13px; color: var(--ink-soft); margin-bottom: 12px; }
+  .stage {
+    background: var(--paper-dark);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px 16px;
+    font-size: 16px;
+    line-height: 2;
+    position: relative;
+  }
+  .stage::before {
+    content: "第 " attr(data-no) " 幕";
+    display: block; font-size: 12px; color: var(--gold);
+    letter-spacing: 2px; margin-bottom: 8px;
+  }
+  .opts { display: flex; gap: 10px; margin-top: 16px; }
+  .opts button {
+    flex: 1; padding: 12px 6px; border-radius: 8px;
+    border: 1.5px solid var(--curtain); background: #fffdf6;
+    color: var(--curtain); font-family: inherit; font-size: 15px;
+    cursor: pointer; letter-spacing: 1px;
+  }
+  .opts button:hover { background: var(--curtain); color: #f3e6c8; }
+  .opts button:disabled { opacity: .5; cursor: default; }
+  .verdict {
+    margin-top: 16px; border-radius: 8px; padding: 14px 16px;
+    border: 1.5px solid var(--gold); background: #fbf4df;
+  }
+  .verdict .big { font-size: 20px; letter-spacing: 3px; margin-bottom: 4px; }
+  .verdict.right .big { color: #3b6d11; }
+  .verdict.wrong .big { color: var(--curtain); }
+  .verdict .src { font-size: 14px; color: var(--ink-soft); }
+  .meter { margin-top: 10px; }
+  .meter .bar { height: 10px; background: #e7dcc0; border-radius: 5px; overflow: hidden; }
+  .meter .fill { height: 100%; background: var(--curtain); border-radius: 5px; }
+  .meter .cap { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+  .ghost-btn {
+    margin-top: 14px; display: inline-block;
+    border: 1.5px solid var(--ink-soft); background: none; color: var(--ink-soft);
+    font-family: inherit; font-size: 14px; padding: 8px 22px;
+    border-radius: 8px; cursor: pointer; letter-spacing: 2px;
+  }
+  .ghost-btn:hover { border-color: var(--curtain); color: var(--curtain); }
+  textarea {
+    width: 100%; min-height: 130px; resize: vertical;
+    background: var(--paper-dark); border: 1px solid var(--line);
+    border-radius: 8px; padding: 12px; font-family: inherit;
+    font-size: 15px; line-height: 1.9; color: var(--ink);
+  }
+  textarea:focus { outline: 2px solid var(--gold); }
+  .radio-row { display: flex; gap: 10px; margin: 12px 0 4px; flex-wrap: wrap; }
+  .radio-row label {
+    flex: 1; min-width: 130px; text-align: center; cursor: pointer;
+    border: 1.5px solid var(--line); border-radius: 8px;
+    padding: 10px 6px; font-size: 14px; background: #fffdf6;
+  }
+  .radio-row label.on { border-color: var(--curtain); color: var(--curtain); font-weight: 500; }
+  .radio-row input { display: none; }
+  select {
+    font-family: inherit; font-size: 14px; padding: 8px 10px;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: #fffdf6; color: var(--ink); margin-top: 10px; width: 100%;
+  }
+  .btn-main {
+    width: 100%; margin-top: 14px; padding: 13px;
+    background: var(--curtain); color: #f3e6c8;
+    border: none; border-radius: 8px; font-family: inherit;
+    font-size: 16px; letter-spacing: 4px; cursor: pointer;
+  }
+  .btn-main:disabled { opacity: .45; cursor: default; }
+  .warn { font-size: 12.5px; color: var(--ink-soft); margin-top: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 9px 6px; text-align: left; border-bottom: 1px solid var(--line); }
+  th { font-weight: 500; color: var(--ink-soft); font-size: 13px; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .row-text { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mode-badge {
+    display: inline-block; font-size: 12px; padding: 2px 10px;
+    border-radius: 10px; border: 1px solid var(--gold);
+    color: var(--gold); margin-top: 10px; letter-spacing: 1px;
+  }
+  .stats-row { display: flex; gap: 10px; margin-top: 4px; }
+  .stats-row .cell {
+    flex: 1; text-align: center; background: var(--paper-dark);
+    border-radius: 8px; padding: 12px 4px;
+  }
+  .stats-row .cell b { display: block; font-size: 22px; font-weight: 500; color: var(--curtain); }
+  .stats-row .cell span { font-size: 12px; color: var(--ink-soft); }
+  .empty { text-align: center; color: var(--ink-soft); padding: 24px 0; font-size: 14px; }
+  #toast {
+    position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: #f7f2e5; font-size: 14px;
+    padding: 10px 22px; border-radius: 8px; opacity: 0;
+    pointer-events: none; transition: all .25s; max-width: 86vw;
+  }
+  #toast.show { opacity: .95; transform: translateX(-50%) translateY(0); }
+  footer { text-align: center; font-size: 12px; color: var(--ink-soft); padding: 30px 0 10px; }
+</style>
+</head>
+<body>
+
+<header class="curtain-bar">
+  <h1>图灵剧场</h1>
+  <div class="en">TURING THEATRE</div>
+  <div class="slogan">这段话，是人写的，还是 AI 写的？上台便知。</div>
+</header>
+
+<nav>
+  <button id="tab-quiz" class="on" onclick="switchTab('quiz')">闯关</button>
+  <button id="tab-submit" onclick="switchTab('submit')">出题</button>
+  <button id="tab-board" onclick="switchTab('board')">榜单</button>
+</nav>
+
+<main>
+  <div id="modeLine" style="text-align:center"></div>
+
+  <section id="view-quiz">
+    <div class="panel">
+      <h2>考场 · 福灵剂鉴别试</h2>
+      <div class="sub">读下面这段文字，判断出自谁手。三选一，答完立即揭盅。</div>
+      <div class="stats-row">
+        <div class="cell"><b id="st-answered">0</b><span>已闯幕数</span></div>
+        <div class="cell"><b id="st-hit">0</b><span>识破次数</span></div>
+        <div class="cell"><b id="st-rate">—</b><span>鉴别命中率</span></div>
+      </div>
+    </div>
+    <div class="panel" id="quizCard"><div class="empty">正在开演……</div></div>
+  </section>
+
+  <section id="view-submit" style="display:none">
+    <div class="panel">
+      <h2>出题 · 献演一段</h2>
+      <div class="sub">把你觉得有迷惑性的一段话投上舞台，并<b>如实标记来源</b>——误标会被观众举报下架。</div>
+      <textarea id="pText" maxlength="200" placeholder="粘贴或写下一段 200 字以内的文字……（别人的话、AI 的回答、你自己的日记都行）"></textarea>
+      <div class="radio-row" id="srcRow">
+        <label data-v="human" class="on"><input type="radio" name="src" value="human" checked>人写的</label>
+        <label data-v="ai"><input type="radio" name="src" value="ai">AI 写的</label>
+      </div>
+      <select id="modelSel" style="display:none">
+        <option value="">它是哪个模型？（可不选）</option>
+        <option>GLM</option><option>DeepSeek</option><option>Qwen</option>
+        <option>GPT</option><option>Claude</option><option>Gemini</option>
+        <option>Kimi</option><option>豆包</option><option>其他</option>
+      </select>
+      <button class="btn-main" id="btnSubmit">献演入选</button>
+      <div class="warn" id="quotaWarn">每位演员每天限献演 5 段。</div>
+    </div>
+  </section>
+
+  <section id="view-board" style="display:none">
+    <div class="panel">
+      <h2>最难分辨 · Top 10</h2>
+      <div class="sub">被最多观众猜错的段落。骗过率越高，说明它越有"人味"（或越有"机器味"）。</div>
+      <div id="boardHard"><div class="empty">还没有观众入座</div></div>
+    </div>
+    <div class="panel">
+      <h2>模型骗过率榜</h2>
+      <div class="sub">各来源段落的平均骗过率——谁最能以假乱真。</div>
+      <div id="boardModel"><div class="empty">虚位以待</div></div>
+    </div>
+  </section>
+
+  <footer>图灵剧场 · 人机之界，一览无余</footer>
+</main>
+
+<div id="toast"></div>
+
+<script src="workbuddy-cloud-sdk.js"></script>
+<script>if (!window.WorkBuddyCloud) document.write('<script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"><\/script>');</script>
+<script>
+/* =========================================================
+ * 云端配置：开通 WorkBuddy 云服务后填入 publicConfig 三项，
+ * 无需改动任何其他代码——页面启动时会自动探测并切到云端。
+ * ========================================================= */
+const PUBLIC_CONFIG = {
+  endpoint: 'https://turing-theatre.app.workbuddy.host',
+  oauthRelayBaseUrl: 'https://www.workbuddy.cn/v2/as/genie-baas/oauth',
+  publishableKey: 'wbpk_fGBsw5VmpuBZSX34EGib1C_taC4soJSxzoPZplfZKjI3fHLaY6P4y3l',
+};
+const CLOUD_READY = !!PUBLIC_CONFIG.endpoint && !!PUBLIC_CONFIG.publishableKey;
+
+/* ---------- 跨源桥（GitHub Pages 等非应用域名访问时，由沙箱 iframe 代发云端请求） ----------
+ * 沙箱 iframe 处于不透明源，fetch 的 Origin 为 null，云端网关放行 null；
+ * 而 github.io 页面自身源不在网关白名单（403），微信 UA 又会被平台边缘层拦普通路径（不拦 /.cloud）。 */
+const USE_CLOUD_BRIDGE = location.hostname !== 'turing-theatre.app.workbuddy.host';
+let __bridgeWin = null, __bridgeReady = null;
+const __bridgePending = new Map();
+function bridgeLoad() {
+  if (__bridgeReady) return __bridgeReady;
+  __bridgeReady = new Promise(resolve => {
+    const f = document.createElement('iframe');
+    f.style.display = 'none';
+    f.setAttribute('sandbox', 'allow-scripts');
+    f.addEventListener('load', () => { __bridgeWin = f.contentWindow; resolve(); });
+    f.src = 'bridge.html';
+    document.body.appendChild(f);
+  });
+  return __bridgeReady;
+}
+window.addEventListener('message', e => {
+  const d = e.data;
+  if (!d || d.__tt !== 1) return;
+  const p = __bridgePending.get(d.id);
+  if (p) { __bridgePending.delete(d.id); p(d); }
+});
+function headersToObj(h) {
+  if (!h) return {};
+  const o = {};
+  if (typeof h.forEach === 'function') h.forEach((v, k) => { o[k] = v; });
+  else Object.keys(h).forEach(k => { o[k] = h[k]; });
+  return o;
+}
+function bridgeFetch(url, init) {
+  url = String(url);
+  return bridgeLoad().then(() => new Promise((resolve, reject) => {
+    const id = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    const to = setTimeout(() => { if (__bridgePending.has(id)) { __bridgePending.delete(id); reject(new TypeError('bridge timeout')); } }, 15000);
+    __bridgePending.set(id, d => {
+      clearTimeout(to);
+      if (d.err) { reject(new TypeError(d.err)); return; }
+      try {
+        resolve(new Response(d.body, { status: d.status, statusText: d.statusText || '', headers: d.headers }));
+      } catch (e) { reject(e); }
+    });
+    __bridgeWin.postMessage({
+      __ttReq: 1, id, url,
+      method: (init && init.method) || 'GET',
+      headers: headersToObj(init && init.headers),
+      body: init && typeof init.body === 'string' ? init.body : undefined,
+    }, '*');
+  }));
+}
+
+/* ---------- 设备指纹（防重复出题/答题） ---------- */
+function fingerprint() {
+  let h = 5381;
+  const raw = [navigator.userAgent, navigator.language, screen.width + 'x' + screen.height,
+    new Date().getTimezoneOffset(), (localStorage.getItem('tt-salt') || '')].join('|');
+  for (let i = 0; i < raw.length; i++) h = ((h << 5) + h + raw.charCodeAt(i)) | 0;
+  return 'fp_' + (h >>> 0).toString(36) + Math.random().toString(36).slice(2, 6);
+}
+const MY_FP = (() => {
+  let v = localStorage.getItem('tt-fp');
+  if (!v) { v = fingerprint(); localStorage.setItem('tt-fp', v); }
+  return v;
+})();
+
+/* ---------- 工具 ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2000);
+}
+const todayKey = () => new Date().toISOString().slice(0, 10);
+const srcLabel = p => p.is_ai ? (p.source_label ? 'AI · ' + p.source_label : 'AI 生成') : (p.source_label || '人写');
+const todayCount = () => {
+  const k = 'tt-submit-' + todayKey();
+  return parseInt(localStorage.getItem(k) || '0', 10);
+};
+function bumpToday() {
+  const k = 'tt-submit-' + todayKey();
+  localStorage.setItem(k, String(todayCount() + 1));
+}
+
+/* ---------- 种子题库（开场保留剧目） ----------
+ * 人写条目均引自已进入公有领域的中文经典；AI 条目由 GLM 现场生成。 */
+const SEEDS = [
+  { text: '在我的后园，可以看见墙外有两株树，一株是枣树，还有一株也是枣树。', is_ai: false, source_label: '鲁迅《秋夜》' },
+  { text: '燕子去了，有再来的时候；杨柳枯了，有再青的时候；桃花谢了，有再开的时候。但是，聪明的，你告诉我，我们的日子为什么一去不复返呢？', is_ai: false, source_label: '朱自清《匆匆》' },
+  { text: '深蓝的天空中挂着一轮金黄的圆月，下面是海边的沙地，都种着一望无际的碧绿的西瓜。', is_ai: false, source_label: '鲁迅《故乡》' },
+  { text: '余忆童稚时，能张目对日，明察秋毫。见藐小之物必细察其纹理，故时有物外之趣。', is_ai: false, source_label: '沈复《浮生六记》' },
+  { text: '清晨的雾气像一层薄纱，轻轻笼罩着小镇的街道，远处传来几声清脆的鸟鸣，空气里弥漫着青草与泥土的芬芳，新的一天就这样安静而美好地开始了。', is_ai: true, source_label: 'GLM 生成' },
+  { text: '从产品设计的角度看，这个功能的核心痛点在于用户心智模型的错位：我们以为用户需要的是更多选项，实际上他们真正需要的，是更少的决策成本。', is_ai: true, source_label: 'GLM 生成' },
+  { text: '时间从来不会为谁停留，我们能做的，只是在流逝中收集那些微小而确定的幸福，把它们一颗一颗串起来，缀成属于自己的那片星河。', is_ai: true, source_label: 'GLM 生成' },
+  { text: '本系统采用模块化架构设计，各组件之间通过标准化接口进行通信，在保证系统可扩展性的同时，也显著降低了后期的维护成本与迭代风险。', is_ai: true, source_label: 'GLM 生成' },
+  { text: '对于这部作品，我认为它的成功并非偶然：扎实的叙事功底、鲜明的人物弧光，以及对时代情绪的精准捕捉，三者相辅相成，缺一不可。', is_ai: true, source_label: 'GLM 生成' },
+  { text: '夜色渐深，城市的灯火次第亮起，像是谁在黑色的绒布上撒了一把碎金。行人行色匆匆，每个人都有自己要去的地方，也有自己要扛的人生。', is_ai: true, source_label: 'GLM 生成' },
+];
+
+/* =========================================================
+ * 数据层：LocalStore（本机）/ CloudStore（云端，方法一一对应）
+ * ========================================================= */
+const LKEY = 'tt-data-v1';
+function loadLocal() {
+  try { return JSON.parse(localStorage.getItem(LKEY)) || null; } catch (e) { return null; }
+}
+const LocalStore = {
+  _d: null,
+  _data() {
+    if (!this._d) {
+      this._d = loadLocal() || { passages: [], guesses: [], mine: {} };
+      const seen = new Set(this._d.passages.map(p => p.seed));
+      SEEDS.forEach((s, i) => {
+        if (!seen.has(i)) this._d.passages.push({
+          id: 'seed-' + i, seed: i, text: s.text, is_ai: s.is_ai,
+          source_label: s.source_label, author_hash: 'stage', created_at: 0,
+        });
+      });
+      this._save();
+    }
+    return this._d;
+  },
+  _save() { localStorage.setItem(LKEY, JSON.stringify(this._d)); },
+  async listPassages() {
+    const hid = this._data().passages.filter(p => (p.reports || 0) < 3);
+    return hid.slice().reverse();
+  },
+  async addPassage(p) {
+    const d = this._data();
+    const row = { id: 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+      text: p.text, is_ai: p.is_ai, source_label: p.source_label,
+      author_hash: MY_FP, created_at: Date.now(), reports: 0 };
+    d.passages.push(row); this._save();
+    return row;
+  },
+  async getMyAnswer(passageId) { return this._data().mine[passageId] || null; },
+  async addGuess(passageId, guess, correct) {
+    const d = this._data();
+    d.guesses.push({ passage_id: passageId, guesser_hash: MY_FP, guess,
+      decisive: guess !== 'unsure', correct: !!correct, created_at: Date.now() });
+    if (!(passageId in d.mine)) d.mine[passageId] = guess;   // 首次判定为准，防改答案
+    this._save();
+  },
+  async listGuesses() { return this._data().guesses; },
+  async addReport(passageId) {
+    const d = this._data();
+    const p = d.passages.find(x => x.id === passageId);
+    if (p) { p.reports = (p.reports || 0) + 1; this._save(); }
+  },
+  async myAnsweredCount() { return Object.keys(this._data().mine).length; },
+};
+
+const CloudStore = {
+  _db: null,
+  init(db) { this._db = db; },
+  async listPassages() {
+    const r = await this._db.from('passages').select('*')
+      .order('created_at', { ascending: false }).limit(500);
+    if (r.error) throw r.error;
+    return (r.data || []).filter(p => (p.reports || 0) < 3);
+  },
+  async addPassage(p) {
+    const r = await this._db.from('passages').insert({
+      text: p.text, is_ai: p.is_ai, source_label: p.source_label || null,
+      author_hash: MY_FP, reports: 0,
+    }).select().single();
+    if (r.error) throw r.error;
+    return r.data;
+  },
+  async getMyAnswer(passageId) {
+    const r = await this._db.from('guesses').select('guess')
+      .match({ passage_id: passageId, guesser_hash: MY_FP }).limit(1);
+    if (r.error) throw r.error;
+    return (r.data && r.data[0]) ? r.data[0].guess : null;
+  },
+  async addGuess(passageId, guess, correct) {
+    const r = await this._db.from('guesses').insert({
+      passage_id: passageId, guesser_hash: MY_FP, guess,
+      decisive: guess !== 'unsure', correct: !!correct,
+    });
+    if (r.error) throw r.error;
+  },
+  async listGuesses() {
+    const r = await this._db.from('guesses').select('passage_id, guess, decisive, correct')
+      .order('created_at', { ascending: false }).limit(5000);
+    if (r.error) throw r.error;
+    return r.data || [];
+  },
+  async addReport(passageId) {
+    const r = await this._db.from('guesses').select('*').limit(0);
+    void r;
+    const cur = await this._db.from('passages').select('reports').match({ id: passageId }).maybeSingle();
+    if (cur.error || !cur.data) return;
+    await this._db.from('passages').update({ reports: (cur.data.reports || 0) + 1 })
+      .match({ id: passageId });
+  },
+  async myAnsweredCount() {
+    const r = await this._db.from('guesses').select('passage_id', { count: 'exact' })
+      .match({ guesser_hash: MY_FP });
+    if (r.error) throw r.error;
+    return r.count || 0;
+  },
+};
+
+let Store = LocalStore;
+let backendMode = 'local';
+async function pickBackend() {
+  if (!window.WorkBuddyCloud || !CLOUD_READY) return;
+  try {
+    const db = WorkBuddyCloud.createWorkBuddyCloud({
+      endpoint: PUBLIC_CONFIG.endpoint,
+      oauthRelayBaseUrl: PUBLIC_CONFIG.oauthRelayBaseUrl,
+      publishableKey: PUBLIC_CONFIG.publishableKey,
+      fetch: USE_CLOUD_BRIDGE ? bridgeFetch : undefined,
+    }).database;
+    const { error } = await db.from('passages').select('id').limit(1);
+    if (error) throw error;
+    CloudStore.init(db);
+    Store = CloudStore;
+    backendMode = 'cloud';
+  } catch (e) {
+    console.warn('云端连接失败，回退本地模式：', (e && e.message) || e);
+  }
+}
+
+/* ---------- 统计辅助 ---------- */
+function passageStats(passages, guesses) {
+  const m = {};
+  passages.forEach(p => { m[p.id] = { total: 0, wrong: 0 }; });
+  guesses.forEach(g => {
+    const s = m[g.passage_id]; if (!s || !g.decisive) return;
+    s.total++; if (!g.correct) s.wrong++;
+  });
+  return m;
+}
+
+/* =========================================================
+ * 视图
+ * ========================================================= */
+let tab = 'quiz';
+let curPassage = null;
+let revealing = false;
+
+function switchTab(t) {
+  tab = t;
+  ['quiz', 'submit', 'board'].forEach(x => {
+    $('view-' + x).style.display = x === t ? '' : 'none';
+    $('tab-' + x).classList.toggle('on', x === t);
+  });
+  if (t === 'quiz') renderQuiz();
+  if (t === 'submit') renderSubmit();
+  if (t === 'board') renderBoard();
+}
+
+/* ---------- 闯关 ---------- */
+async function renderQuiz() {
+  renderStats();
+  if (revealing) return;
+  const box = $('quizCard');
+  box.innerHTML = '<div class="empty">正在开演……</div>';
+  try {
+    const [passages, guesses, mine] = await Promise.all([
+      Store.listPassages(), Store.listGuesses(), Store.listMine()]);
+    const pool = passages.filter(p => !mine[p.id]);
+    if (!pool.length) {
+      box.innerHTML = '<div class="empty">本场剧目你已全部看毕——去「出题」献演一段，让下一位观众犯难吧。</div>';
+      return;
+    }
+    const p = pool[Math.floor(Math.random() * pool.length)];
+    curPassage = p;
+    const no = Object.keys(answered).length + 1;
+    box.innerHTML =
+      '<div class="stage" data-no="' + no + '">' + esc(p.text) + '</div>' +
+      '<div class="opts">' +
+        '<button onclick="makeGuess(\'human\')">人写的</button>' +
+        '<button onclick="makeGuess(\'ai\')">AI 写的</button>' +
+        '<button onclick="makeGuess(\'unsure\')">说不准</button>' +
+      '</div>';
+  } catch (e) {
+    box.innerHTML = '<div class="empty">剧场停电了：' + esc(e && e.message || e) + '</div>';
+  }
+}
+
+async function renderStats() {
+  try {
+    const [n, mine] = await Promise.all([Store.myAnsweredCount(), Store.listMine()]);
+    const [passages, guesses] = await Promise.all([Store.listPassages(), Store.listGuesses()]);
+    const stats = passageStats(passages, guesses);
+    let hit = 0, total = 0;
+    Object.keys(mine).forEach(pid => {
+      const g = mine[pid];
+      if (g === 'unsure') return;
+      total++;
+      const p = passages.find(x => x.id === pid);
+      if (p) {
+        const correct = (g === 'human') === !p.is_ai;
+        if (correct) hit++;
+      }
+    });
+    $('st-answered').textContent = n;
+    $('st-hit').textContent = hit;
+    $('st-rate').textContent = total ? Math.round(hit / total * 100) + '%' : '—';
+  } catch (e) { /* 静默 */ }
+}
+
+async function makeGuess(guess) {
+  if (!curPassage || revealing) return;
+  revealing = true;
+  const p = curPassage;
+  const correct = guess === 'unsure' ? false : (guess === 'human') === !p.is_ai;
+  try { await Store.addGuess(p.id, guess, correct); } catch (e) {
+    toast('提交失败：' + (e && e.message || e)); revealing = false; return;
+  }
+  const box = $('quizCard');
+  const stats = passageStats([p], await Store.listGuesses());
+  const s = stats[p.id] || { total: 0, wrong: 0 };
+  const rate = s.total ? Math.round(s.wrong / s.total * 100) : 0;
+  const head = guess === 'unsure' ? '弃权观演' : (correct ? '好眼力！' : '被骗过了');
+  box.innerHTML =
+    '<div class="verdict ' + (guess === 'unsure' ? '' : correct ? 'right' : 'wrong') + '">' +
+      '<div class="big">' + head + '</div>' +
+      '<div class="src">正确答案：' + esc(srcLabel(p)) + '</div>' +
+      '<div class="meter">' +
+        '<div class="bar"><div class="fill" style="width:' + rate + '%"></div></div>' +
+        '<div class="cap">本段骗过率 ' + rate + '%（' + s.wrong + '/' + s.total + ' 位观众猜错）</div>' +
+      '</div>' +
+      '<button class="ghost-btn" onclick="reportPassage()">举报来源标记不实</button>' +
+    '</div>' +
+    '<button class="btn-main" onclick="nextAct()">下一幕</button>';
+  renderStats();
+  revealing = false;
+}
+
+async function nextAct() { renderQuiz(); }
+
+async function reportPassage() {
+  if (!curPassage) return;
+  try { await Store.addReport(curPassage.id); toast('已记录举报，谢谢较真'); }
+  catch (e) { toast('举报失败：' + (e && e.message || e)); }
+}
+
+/* ---------- 出题 ---------- */
+function renderSubmit() {
+  const n = todayCount();
+  $('quotaWarn').textContent = n >= 5
+    ? '今日献演额度已用完（5/5），明天再来。'
+    : '今日已献演 ' + n + ' / 5 段。';
+  $('btnSubmit').disabled = n >= 5;
+}
+
+$('srcRow').addEventListener('click', e => {
+  const lab = e.target.closest('label'); if (!lab) return;
+  document.querySelectorAll('#srcRow label').forEach(l => l.classList.remove('on'));
+  lab.classList.add('on');
+  lab.querySelector('input').checked = true;
+  $('modelSel').style.display = lab.dataset.v === 'ai' ? '' : 'none';
+});
+
+$('btnSubmit').addEventListener('click', async () => {
+  const text = $('pText').value.trim();
+  if (text.length < 15) { toast('太短了，至少 15 个字才有迷惑性'); return; }
+  const isAi = document.querySelector('#srcRow input:checked').value === 'ai';
+  const model = isAi ? $('modelSel').value.trim() : '';
+  const label = isAi ? (model || 'AI 生成') : '';
+  try {
+    await Store.addPassage({ text, is_ai: isAi, source_label: label });
+    bumpToday();
+    $('pText').value = '';
+    toast('献演成功，已进入剧目单');
+    renderSubmit();
+  } catch (e) { toast('提交失败：' + (e && e.message || e)); }
+});
+
+/* ---------- 榜单 ---------- */
+async function renderBoard() {
+  try {
+    const [passages, guesses] = await Promise.all([Store.listPassages(), Store.listGuesses()]);
+    const stats = passageStats(passages, guesses);
+    const rows = passages
+      .filter(p => stats[p.id] && stats[p.id].total >= 1)
+      .map(p => ({ p, s: stats[p.id], rate: s2rate(stats[p.id]) }))
+      .sort((a, b) => b.rate - a.rate || b.s.total - a.s.total);
+    const hard = $('boardHard');
+    if (!rows.length) {
+      hard.innerHTML = '<div class="empty">还没有观众入座，快去闯关吧</div>';
+    } else {
+      hard.innerHTML = '<table><tr><th>段落</th><th class="num">骗过率</th><th class="num">样本</th></tr>' +
+        rows.slice(0, 10).map((r, i) =>
+          '<tr><td class="row-text">' + (i + 1) + '. ' + esc(r.p.text) + '</td>' +
+          '<td class="num">' + r.rate + '%</td><td class="num">' + r.s.total + '</td></tr>').join('') +
+        '</table>';
+    }
+    const bySrc = {};
+    rows.forEach(r => {
+      const k = srcLabel(r.p);
+      if (!bySrc[k]) bySrc[k] = { w: 0, t: 0 };
+      bySrc[k].w += r.s.wrong; bySrc[k].t += r.s.total;
+    });
+    const srcRows = Object.keys(bySrc).map(k => ({ k, rate: Math.round(bySrc[k].w / bySrc[k].t * 100), t: bySrc[k].t }))
+      .sort((a, b) => b.rate - a.rate);
+    const bm = $('boardModel');
+    if (!srcRows.length) {
+      bm.innerHTML = '<div class="empty">虚位以待</div>';
+    } else {
+      bm.innerHTML = '<table><tr><th>来源</th><th class="num">平均骗过率</th><th class="num">样本</th></tr>' +
+        srcRows.map(r => '<tr><td>' + esc(r.k) + '</td><td class="num">' + r.rate + '%</td><td class="num">' + r.t + '</td></tr>').join('') +
+        '</table>';
+    }
+  } catch (e) {
+    $('boardHard').innerHTML = '<div class="empty">榜单暂不可用：' + esc(e && e.message || e) + '</div>';
+  }
+}
+function s2rate(s) { return s.total ? Math.round(s.wrong / s.total * 100) : 0; }
+
+/* ---------- CloudStore 补充：listMine ---------- */
+LocalStore.listMine = async function () { return this._data().mine; };
+CloudStore.listMine = async function () {
+  const r = await this._db.from('guesses').select('passage_id, guess, created_at')
+    .match({ guesser_hash: MY_FP }).order('created_at', { ascending: true }).limit(500);
+  if (r.error) throw r.error;
+  const m = {};
+  (r.data || []).forEach(g => { if (!(g.passage_id in m)) m[g.passage_id] = g.guess; });
+  return m;
+};
+
+/* ---------- 启动 ---------- */
+(async function boot() {
+  $('modeLine').innerHTML = CLOUD_READY
+    ? '<span class="mode-badge">探测中……</span>'
+    : '<span class="mode-badge">本机模式 · 数据存在这台浏览器里</span>';
+  await pickBackend();
+  $('modeLine').innerHTML = backendMode === 'cloud'
+    ? '<span class="mode-badge">云端模式 · 全网共享剧目单</span>'
+    : '<span class="mode-badge">本机模式 · 数据存在这台浏览器里</span>';
+  switchTab('quiz');
+})();
+</script>
+</body>
+</html>
